@@ -1,0 +1,110 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/tshwane_bus_tracker_app/nodejs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model user {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model route {
+  id            String   @id @default(uuid())
+  routeNumber   String   @unique @map("route_number")
+  name          String
+  startPoint    String   @map("start_point")
+  endPoint      String   @map("end_point")
+  color         String
+  type          RouteType @default(ARE_YENG)
+  status        RouteStatus @default(ON_TIME)
+  delayMinutes  Int      @default(0) @map("delay_minutes")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  routeStops route_stop[]
+  buses      bus[]
+
+  @@map("routes")
+}
+
+enum RouteType {
+  ARE_YENG
+  TBS
+}
+
+enum RouteStatus {
+  ON_TIME
+  DELAYED
+}
+
+model stop {
+  id        String   @id @default(uuid())
+  name      String
+  latitude  Float
+  longitude Float
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  routeStops route_stop[]
+
+  @@index([latitude, longitude])
+  @@map("stops")
+}
+
+model route_stop {
+  id                       String  @id @default(uuid())
+  routeId                  String  @map("route_id")
+  stopId                   String  @map("stop_id")
+  stopOrder                Int     @map("stop_order")
+  distanceFromPrevious     Float?  @map("distance_from_previous")
+  estimatedTimeFromPrevious Int?   @map("estimated_time_from_previous")
+  createdAt                DateTime @default(now()) @map("created_at")
+
+  route route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop  stop  @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, stopOrder])
+  @@unique([routeId, stopId])
+  @@map("route_stops")
+}
+
+enum BusStatus {
+  ON_TIME
+  DELAYED
+  OUT_OF_SERVICE
+}
+
+model bus {
+  id               String    @id @default(uuid())
+  routeId          String    @map("route_id")
+  licensePlate     String    @unique @map("license_plate")
+  currentLatitude  Float     @map("current_latitude")
+  currentLongitude Float     @map("current_longitude")
+  heading          Float     @default(0)
+  speed            Float     @default(0)
+  status           BusStatus @default(ON_TIME)
+  currentStopIndex Int       @map("current_stop_index")
+  delayMinutes     Int       @default(0) @map("delay_minutes")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  route route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@index([routeId])
+  @@index([status])
+  @@map("buses")
+}

@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run start:dev",
+  "framework": "nestjs",
+  "env": [
+    "DATABASE_URL",
+    "JWT_SECRET",
+    "NODE_ENV"
+  ]
+}
